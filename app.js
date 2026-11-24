@@ -34,6 +34,61 @@
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+  const currentChinaDate = () =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  const defaultDateState = new WeakMap();
+
+  function setDefaultDate(input, force = false) {
+    if (!input) return;
+    const state = defaultDateState.get(input) || {
+      lastDefault: "",
+      custom: false,
+    };
+    if (force || !state.custom || !input.value) {
+      input.value = currentChinaDate();
+      state.lastDefault = input.value;
+      state.custom = false;
+      defaultDateState.set(input, state);
+    }
+  }
+
+  function registerDefaultDate(input) {
+    defaultDateState.set(input, { lastDefault: "", custom: false });
+    input.addEventListener("change", () => {
+      const state = defaultDateState.get(input);
+      if (!state) return;
+      state.custom = input.value !== state.lastDefault;
+    });
+    setDefaultDate(input, true);
+  }
+
+  function keepSelectedDate(input) {
+    const state = defaultDateState.get(input);
+    if (state) state.custom = true;
+  }
+
+  function refreshDefaultDates() {
+    $$(
+      "#mealDate, #photoDate, #argumentDate, #heartbeatDate",
+    ).forEach((input) => setDefaultDate(input));
+    if (anniversary) {
+      const refreshedToday = currentChinaDate();
+      const refreshedDays = Math.max(
+        1,
+        Math.floor(
+          (Date.parse(`${refreshedToday}T00:00:00Z`) -
+            Date.parse(`${data.couple.anniversary}T00:00:00Z`)) /
+            86400000,
+        ) + 1,
+      );
+      setText("[data-days-together]", String(refreshedDays));
+    }
+  }
   const daysTogether = anniversary
     ? Math.max(
         1,
@@ -87,6 +142,8 @@
   const mealPhoto = $("#mealPhoto");
   const mealPhotoPicker = $("#mealPhotoPicker");
   const mealPhotoPreview = $("#mealPhotoPreview");
+  const cancelFoodEdit = $("#cancelFoodEdit");
+  const mealSubmitLabel = mealForm.querySelector('button[type="submit"] span');
   const foodStorageKey = "between-us-food-records-v1";
   const ratingLabels = {
     5: "超级好吃",
@@ -96,6 +153,8 @@
     1: "下次不吃了",
   };
   let pendingFoodPhoto = "";
+  let pendingFoodStoragePath = "";
+  let editingFoodId = null;
 
   function loadSavedFoods() {
     try {
@@ -149,16 +208,24 @@
               <span>${ratingLabels[food.rating] || "还没有评价"}</span>
               <span aria-label="${food.rating || 0} 分">${"●".repeat(Number(food.rating) || 0)}${"○".repeat(5 - (Number(food.rating) || 0))}</span>
             </div>
-            <button class="meal-card__delete" type="button" data-meal-id="${food.id}">移除这条记录</button>
+            <div class="record-manage">
+              <button type="button" data-meal-edit="${food.id}">编辑</button>
+              <button class="meal-card__delete" type="button" data-meal-id="${food.id}">删除</button>
+            </div>
           </div>
         `;
+        card
+          .querySelector("[data-meal-edit]")
+          .addEventListener("click", () => beginFoodEdit(food));
         card
           .querySelector(".meal-card__delete")
           .addEventListener("click", () => {
             if (!window.confirm("要移除这条用餐记录吗？")) return;
+            markRecordDeleted(foodStorageKey, food.id);
             foods = foods.filter((item) => item.id !== food.id);
             saveFoods();
             renderFoods();
+            renderRecentMemories();
             showToast("这条用餐记录已移除");
           });
         foodGrid.append(card);
@@ -167,23 +234,46 @@
     observeReveals(foodGrid);
   }
 
+  function beginFoodEdit(food) {
+    editingFoodId = food.id;
+    mealDate.value = food.date || "";
+    keepSelectedDate(mealDate);
+    mealName.value = food.name || "";
+    const rating = mealForm.querySelector(
+      `input[name="mealRating"][value="${food.rating}"]`,
+    );
+    if (rating) rating.checked = true;
+    pendingFoodPhoto = food.image || "";
+    pendingFoodStoragePath = food.storagePath || "";
+    if (food.image) {
+      mealPhotoPreview.src = food.image;
+      mealPhotoPreview.hidden = false;
+      mealPhotoPicker.hidden = true;
+    } else {
+      mealPhotoPreview.removeAttribute("src");
+      mealPhotoPreview.hidden = true;
+      mealPhotoPicker.hidden = false;
+    }
+    cancelFoodEdit.hidden = false;
+    mealSubmitLabel.textContent = "保存修改";
+    mealForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function setTodayAsDefault() {
-    const now = new Date();
-    const localDate = new Date(
-      now.getTime() - now.getTimezoneOffset() * 60 * 1000,
-    )
-      .toISOString()
-      .slice(0, 10);
-    mealDate.value = localDate;
+    setDefaultDate(mealDate, true);
   }
 
   function resetFoodForm() {
     mealForm.reset();
     setTodayAsDefault();
     pendingFoodPhoto = "";
+    pendingFoodStoragePath = "";
+    editingFoodId = null;
     mealPhotoPreview.removeAttribute("src");
     mealPhotoPreview.hidden = true;
     mealPhotoPicker.hidden = false;
+    cancelFoodEdit.hidden = true;
+    mealSubmitLabel.textContent = "记下这一顿";
   }
 
   async function compressFoodPhoto(file) {
@@ -225,11 +315,16 @@
     return { image: dataUrl, storagePath: "" };
   }
 
+  function markRecordDeleted(collectionKey, recordId) {
+    window.BetweenUsCloud?.markDeleted?.(collectionKey, recordId);
+  }
+
   mealPhoto.addEventListener("change", async () => {
     const [file] = mealPhoto.files;
     if (!file) return;
     try {
       pendingFoodPhoto = await compressFoodPhoto(file);
+      pendingFoodStoragePath = "";
       mealPhotoPreview.src = pendingFoodPhoto;
       mealPhotoPreview.hidden = false;
       mealPhotoPicker.hidden = true;
@@ -259,14 +354,19 @@
       return;
     }
     const nextFood = {
-      id: `meal-${Date.now()}`,
+      id: editingFoodId || `meal-${Date.now()}`,
       date: mealDate.value,
       name: mealName.value.trim(),
       rating: mealRating.value,
       image: storedPhoto.image,
-      storagePath: storedPhoto.storagePath,
+      storagePath: storedPhoto.storagePath || pendingFoodStoragePath,
+      updatedAt: new Date().toISOString(),
     };
-    const nextFoods = [nextFood, ...foods].sort((a, b) =>
+    const nextFoods = (
+      editingFoodId
+        ? foods.map((item) => (item.id === editingFoodId ? nextFood : item))
+        : [nextFood, ...foods]
+    ).sort((a, b) =>
       String(b.date).localeCompare(String(a.date)),
     );
     try {
@@ -277,9 +377,13 @@
     }
     foods = nextFoods;
     renderFoods();
+    renderRecentMemories();
+    const wasEditing = Boolean(editingFoodId);
     resetFoodForm();
-    showToast("这一顿已经记下来了");
+    showToast(wasEditing ? "这顿记录已经修改好了" : "这一顿已经记下来了");
   });
+
+  cancelFoodEdit.addEventListener("click", resetFoodForm);
 
   setTodayAsDefault();
   renderFoods();
@@ -302,7 +406,12 @@
   const hundredText = $("#hundredText");
   const hundredList = $("#hundredList");
   const hundredFilter = $("#hundredFilter");
+  const cancelHundredEdit = $("#cancelHundredEdit");
+  const hundredSubmitLabel = hundredForm.querySelector(
+    'button[type="submit"] span',
+  );
   let activeHundredFilter = "all";
+  let editingHundredId = null;
 
   function renderHundredList() {
     hundredList.innerHTML = "";
@@ -331,7 +440,10 @@
             <span class="hundred-item__number">${String(itemNumber).padStart(2, "0")}</span>
             <span>${thing.text}</span>
           </label>
-          <button class="hundred-item__remove" type="button" aria-label="移除${thing.text}">移除</button>
+          <div class="hundred-item__actions">
+            <button class="hundred-item__edit" type="button" aria-label="编辑${thing.text}">编辑</button>
+            <button class="hundred-item__remove" type="button" aria-label="移除${thing.text}">删除</button>
+          </div>
         </div>
       `;
       const label = item.querySelector("label");
@@ -351,6 +463,7 @@
       checkbox.addEventListener("change", (event) => {
         const viewport = viewportBeforeToggle || captureHundredViewport();
         thing.done = event.target.checked;
+        thing.updatedAt = new Date().toISOString();
         saveHundredThings();
         updateHundredProgress();
         showToast(thing.done ? "又完成了一件小事" : "已放回还没做的清单");
@@ -364,15 +477,16 @@
         viewportBeforeToggle = null;
       });
       item
+        .querySelector(".hundred-item__edit")
+        .addEventListener("click", () => beginHundredEdit(thing));
+      item
         .querySelector(".hundred-item__remove")
         .addEventListener("click", () => {
+          if (!window.confirm(`确定删除“${thing.text}”吗？`)) return;
+          markRecordDeleted(hundredStorageKey, thing.id);
           hundredThings = hundredThings.filter(
             (entry) => entry.id !== thing.id,
           );
-          hundredThings = hundredThings.map((entry, index) => ({
-            ...entry,
-            id: String(index + 1),
-          }));
           saveHundredThings();
           renderHundredList();
           showToast("已从清单里移除");
@@ -406,6 +520,22 @@
     localStorage.setItem(hundredStorageKey, JSON.stringify(hundredThings));
   }
 
+  function beginHundredEdit(thing) {
+    editingHundredId = thing.id;
+    hundredText.value = thing.text;
+    cancelHundredEdit.hidden = false;
+    hundredSubmitLabel.textContent = "保存这件小事";
+    hundredForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => hundredText.focus(), 300);
+  }
+
+  function resetHundredForm() {
+    editingHundredId = null;
+    hundredForm.reset();
+    cancelHundredEdit.hidden = true;
+    hundredSubmitLabel.textContent = "放进我们的清单";
+  }
+
   function updateHundredProgress() {
     const done = hundredThings.filter((thing) => thing.done).length;
     setText(
@@ -437,23 +567,38 @@
       showToast("先写下一件想一起做的事吧");
       return;
     }
-    if (hundredThings.length >= 100) {
+    if (!editingHundredId && hundredThings.length >= 100) {
       showToast("这一百件已经装满啦");
       return;
     }
-    const nextId = String(
-      Math.max(0, ...hundredThings.map((thing) => Number(thing.id) || 0)) + 1,
-    );
-    hundredThings.push({ id: nextId, text, done: false });
-    hundredThings = hundredThings.map((entry, index) => ({
-      ...entry,
-      id: String(index + 1),
-    }));
+    if (editingHundredId) {
+      hundredThings = hundredThings.map((thing) =>
+        thing.id === editingHundredId
+          ? { ...thing, text, updatedAt: new Date().toISOString() }
+          : thing,
+      );
+    } else {
+      const nextId = String(
+        Math.max(
+          0,
+          ...hundredThings.map((thing) => Number(thing.id) || 0),
+        ) + 1,
+      );
+      hundredThings.push({
+        id: nextId,
+        text,
+        done: false,
+        updatedAt: new Date().toISOString(),
+      });
+    }
     saveHundredThings();
-    hundredForm.reset();
+    const wasEditing = Boolean(editingHundredId);
+    resetHundredForm();
     renderHundredList();
-    showToast("又往清单里放进一件小事");
+    showToast(wasEditing ? "这件小事已经修改好了" : "又往清单里放进一件小事");
   });
+
+  cancelHundredEdit.addEventListener("click", resetHundredForm);
 
   /* Photos */
 
@@ -466,7 +611,13 @@
   const photoUploadPicker = $("#photoUploadPicker");
   const photoUploadPreview = $("#photoUploadPreview");
   const photoStory = $("#photoStory");
+  const cancelPhotoEdit = $("#cancelPhotoEdit");
+  const photoSubmitLabel = photoForm.querySelector(
+    'button[type="submit"] span',
+  );
   let pendingGalleryPhoto = "";
+  let pendingGalleryStoragePath = "";
+  let editingPhotoId = null;
 
   function loadSavedPhotos() {
     try {
@@ -514,6 +665,30 @@
     figure
       .querySelector("button")
       .addEventListener("click", () => openMemory(item));
+
+    const actions = document.createElement("div");
+    actions.className = "gallery-item__actions";
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.textContent = "编辑";
+    editButton.setAttribute("aria-label", `编辑照片记录：${item.title}`);
+    editButton.addEventListener("click", () => beginPhotoEdit(item));
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "删除";
+    removeButton.setAttribute("aria-label", `删除照片记录：${item.title}`);
+    removeButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (!window.confirm(`确定删除“${item.title}”这张照片记录吗？`)) return;
+      markRecordDeleted(photoStorageKey, item.id);
+      photos = photos.filter((photo) => photo.id !== item.id);
+      localStorage.setItem(photoStorageKey, JSON.stringify(photos));
+      renderPhotos();
+      renderRecentMemories();
+      showToast("照片记录已删除");
+    });
+    actions.append(editButton, removeButton);
+    figure.append(actions);
     return figure;
   }
 
@@ -552,10 +727,36 @@
 
   function resetPhotoForm() {
     photoForm.reset();
+    setDefaultDate(photoDate, true);
     pendingGalleryPhoto = "";
+    pendingGalleryStoragePath = "";
+    editingPhotoId = null;
     photoUploadPreview.removeAttribute("src");
     photoUploadPreview.hidden = true;
     photoUploadPicker.hidden = false;
+    photoUpload.required = true;
+    cancelPhotoEdit.hidden = true;
+    photoSubmitLabel.textContent = "收进照片册";
+  }
+
+  function beginPhotoEdit(item) {
+    editingPhotoId = item.id;
+    photoDate.value = item.date || "";
+    keepSelectedDate(photoDate);
+    photoTitle.value = item.title || "";
+    photoStory.value = item.text || "";
+    pendingGalleryPhoto = item.image || "";
+    pendingGalleryStoragePath = item.storagePath || "";
+    photoUpload.required = false;
+    if (item.image) {
+      photoUploadPreview.src = item.image;
+      photoUploadPreview.hidden = false;
+      photoUploadPicker.hidden = true;
+    }
+    cancelPhotoEdit.hidden = false;
+    photoSubmitLabel.textContent = "保存修改";
+    photoForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => photoTitle.focus(), 300);
   }
 
   photoUpload.addEventListener("change", async () => {
@@ -563,6 +764,7 @@
     if (!file) return;
     try {
       pendingGalleryPhoto = await compressFoodPhoto(file);
+      pendingGalleryStoragePath = "";
       photoUploadPreview.src = pendingGalleryPhoto;
       photoUploadPreview.hidden = false;
       photoUploadPicker.hidden = true;
@@ -588,17 +790,26 @@
       return;
     }
     const nextPhoto = {
-      id: `photo-${Date.now()}`,
+      id: editingPhotoId || `photo-${Date.now()}`,
       date: photoDate.value,
       title: photoTitle.value.trim(),
       text: photoStory.value.trim() || "这一天的故事，等我们再慢慢补上。",
-      place: "岳岳 × 昆昆",
+      place: editingPhotoId
+        ? photos.find((item) => item.id === editingPhotoId)?.place ||
+          "岳岳 × 昆昆"
+        : "岳岳 × 昆昆",
       image: storedPhoto.image,
-      storagePath: storedPhoto.storagePath,
+      storagePath: storedPhoto.storagePath || pendingGalleryStoragePath,
       alt: photoTitle.value.trim(),
-      size: photoSizes[photos.length % photoSizes.length],
+      size:
+        (editingPhotoId &&
+          photos.find((item) => item.id === editingPhotoId)?.size) ||
+        photoSizes[photos.length % photoSizes.length],
+      updatedAt: new Date().toISOString(),
     };
-    const nextPhotos = [nextPhoto, ...photos];
+    const nextPhotos = editingPhotoId
+      ? photos.map((item) => (item.id === editingPhotoId ? nextPhoto : item))
+      : [nextPhoto, ...photos];
     try {
       localStorage.setItem(photoStorageKey, JSON.stringify(nextPhotos));
     } catch {
@@ -607,10 +818,13 @@
     }
     photos = nextPhotos;
     renderPhotos();
+    renderRecentMemories();
+    const wasEditing = Boolean(editingPhotoId);
     resetPhotoForm();
-    showToast("这张照片已经收进照片册");
+    showToast(wasEditing ? "这张照片记录已经修改好了" : "这张照片已经收进照片册");
   });
 
+  cancelPhotoEdit.addEventListener("click", resetPhotoForm);
   renderPhotos();
 
   /* Arguments */
@@ -621,6 +835,11 @@
   const argumentTitle = $("#argumentTitle");
   const argumentTrigger = $("#argumentTrigger");
   const argumentLesson = $("#argumentLesson");
+  const cancelArgumentEdit = $("#cancelArgumentEdit");
+  const argumentSubmitLabel = argumentForm.querySelector(
+    'button[type="submit"] span',
+  );
+  let editingArgumentId = null;
   const savedArguments = loadArray(argumentStorageKey);
   let argumentRecords = (
     savedArguments === null ? [...data.arguments] : savedArguments
@@ -653,11 +872,55 @@
           <div><span>那次因为什么</span><p>${item.trigger}</p></div>
           <div class="argument-item__lesson"><span>我们学到了</span><p>${item.learned}</p></div>
         </div>
+        <div class="record-manage">
+          <button type="button" data-argument-edit="${item.id}">编辑</button>
+          <button type="button" data-argument-delete="${item.id}">删除这条复盘</button>
+        </div>
       `;
+        details
+          .querySelector("[data-argument-edit]")
+          .addEventListener("click", () => beginArgumentEdit(item));
+        details
+          .querySelector("[data-argument-delete]")
+          .addEventListener("click", () => {
+            if (!window.confirm(`确定删除“${item.title}”这条复盘吗？`)) return;
+            markRecordDeleted(argumentStorageKey, item.id);
+            argumentRecords = argumentRecords.filter(
+              (record) => record.id !== item.id,
+            );
+            localStorage.setItem(
+              argumentStorageKey,
+              JSON.stringify(argumentRecords),
+            );
+            renderArguments();
+            renderRecentMemories();
+            showToast("这次复盘已删除");
+          });
         argumentList.append(details);
       });
     }
     observeReveals(argumentList);
+  }
+
+  function beginArgumentEdit(item) {
+    editingArgumentId = item.id;
+    argumentDate.value = item.date || "";
+    keepSelectedDate(argumentDate);
+    argumentTitle.value = item.title || "";
+    argumentTrigger.value = item.trigger || "";
+    argumentLesson.value = item.learned || "";
+    cancelArgumentEdit.hidden = false;
+    argumentSubmitLabel.textContent = "保存修改";
+    argumentForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => argumentTitle.focus(), 300);
+  }
+
+  function resetArgumentForm() {
+    editingArgumentId = null;
+    argumentForm.reset();
+    setDefaultDate(argumentDate, true);
+    cancelArgumentEdit.hidden = true;
+    argumentSubmitLabel.textContent = "完成这次复盘";
   }
 
   argumentForm.addEventListener("submit", (event) => {
@@ -671,18 +934,26 @@
       return;
     }
     const nextArgument = {
-      id: `argument-${Date.now()}`,
+      id: editingArgumentId || `argument-${Date.now()}`,
       date: argumentDate.value,
       title: argumentTitle.value.trim(),
-      place: "我们的复盘",
+      place: editingArgumentId
+        ? argumentRecords.find((item) => item.id === editingArgumentId)
+            ?.place || "我们的复盘"
+        : "我们的复盘",
       trigger: argumentTrigger.value.trim(),
       resolution: "",
       learned: argumentLesson.value.trim() || "下次更早一点听懂彼此。",
       duration: "已经和好",
+      updatedAt: new Date().toISOString(),
     };
-    const nextArguments = [nextArgument, ...argumentRecords].sort((a, b) =>
-      String(b.date).localeCompare(String(a.date)),
-    );
+    const nextArguments = (
+      editingArgumentId
+        ? argumentRecords.map((item) =>
+            item.id === editingArgumentId ? nextArgument : item,
+          )
+        : [nextArgument, ...argumentRecords]
+    ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
     try {
       localStorage.setItem(argumentStorageKey, JSON.stringify(nextArguments));
     } catch {
@@ -690,11 +961,14 @@
       return;
     }
     argumentRecords = nextArguments;
-    argumentForm.reset();
+    const wasEditing = Boolean(editingArgumentId);
+    resetArgumentForm();
     renderArguments();
-    showToast("这次争执已经认真复盘好了");
+    renderRecentMemories();
+    showToast(wasEditing ? "这次复盘已经修改好了" : "这次争执已经认真复盘好了");
   });
 
+  cancelArgumentEdit.addEventListener("click", resetArgumentForm);
   renderArguments();
 
   /* Heartbeats */
@@ -707,7 +981,13 @@
   const heartbeatPhoto = $("#heartbeatPhoto");
   const heartbeatPhotoPicker = $("#heartbeatPhotoPicker");
   const heartbeatPhotoPreview = $("#heartbeatPhotoPreview");
+  const cancelHeartbeatEdit = $("#cancelHeartbeatEdit");
+  const heartbeatSubmitLabel = heartbeatForm.querySelector(
+    'button[type="submit"] span',
+  );
   let pendingHeartbeatPhoto = "";
+  let pendingHeartbeatStoragePath = "";
+  let editingHeartbeatId = null;
   const savedHeartbeats = loadArray(heartbeatStorageKey);
   let heartbeats = (
     savedHeartbeats === null ? [...data.heartbeats] : savedHeartbeats
@@ -741,9 +1021,37 @@
             </div>
             <p>${item.text}</p>
             <blockquote>“${item.quote || "那一刻，心里软了一下。"}”</blockquote>
+            <div class="timeline-item__actions">
+              <button type="button" data-heartbeat-edit="${item.id}">编辑</button>
+              <button type="button" data-heartbeat-delete="${item.id}">删除</button>
+            </div>
           </div>
         </div>
       `;
+        article
+          .querySelector("[data-heartbeat-edit]")
+          .addEventListener("click", (event) => {
+            event.stopPropagation();
+            beginHeartbeatEdit(item);
+          });
+        const heartbeatDelete = article.querySelector(
+          "[data-heartbeat-delete]",
+        );
+        heartbeatDelete.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (!window.confirm(`确定删除“${item.title}”这个心动瞬间吗？`)) {
+            return;
+          }
+          markRecordDeleted(heartbeatStorageKey, item.id);
+          heartbeats = heartbeats.filter((record) => record.id !== item.id);
+          localStorage.setItem(
+            heartbeatStorageKey,
+            JSON.stringify(heartbeats),
+          );
+          renderHeartbeats();
+          renderRecentMemories();
+          showToast("这次心动已删除");
+        });
         if (item.image) {
           article.tabIndex = 0;
           article.setAttribute("role", "button");
@@ -759,11 +1067,48 @@
     observeReveals(heartbeatList);
   }
 
+  function beginHeartbeatEdit(item) {
+    editingHeartbeatId = item.id;
+    heartbeatDate.value = item.date || "";
+    keepSelectedDate(heartbeatDate);
+    heartbeatTitle.value = item.title || "";
+    heartbeatStory.value = item.text || "";
+    pendingHeartbeatPhoto = item.image || "";
+    pendingHeartbeatStoragePath = item.storagePath || "";
+    if (item.image) {
+      heartbeatPhotoPreview.src = item.image;
+      heartbeatPhotoPreview.hidden = false;
+      heartbeatPhotoPicker.hidden = true;
+    } else {
+      heartbeatPhotoPreview.removeAttribute("src");
+      heartbeatPhotoPreview.hidden = true;
+      heartbeatPhotoPicker.hidden = false;
+    }
+    cancelHeartbeatEdit.hidden = false;
+    heartbeatSubmitLabel.textContent = "保存这次心动";
+    heartbeatForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => heartbeatTitle.focus(), 300);
+  }
+
+  function resetHeartbeatForm() {
+    editingHeartbeatId = null;
+    heartbeatForm.reset();
+    setDefaultDate(heartbeatDate, true);
+    pendingHeartbeatPhoto = "";
+    pendingHeartbeatStoragePath = "";
+    heartbeatPhotoPreview.removeAttribute("src");
+    heartbeatPhotoPreview.hidden = true;
+    heartbeatPhotoPicker.hidden = false;
+    cancelHeartbeatEdit.hidden = true;
+    heartbeatSubmitLabel.textContent = "收下这次心动";
+  }
+
   heartbeatPhoto.addEventListener("change", async () => {
     const [file] = heartbeatPhoto.files;
     if (!file) return;
     try {
       pendingHeartbeatPhoto = await compressFoodPhoto(file);
+      pendingHeartbeatStoragePath = "";
       heartbeatPhotoPreview.src = pendingHeartbeatPhoto;
       heartbeatPhotoPreview.hidden = false;
       heartbeatPhotoPicker.hidden = true;
@@ -796,20 +1141,31 @@
       return;
     }
     const nextHeartbeat = {
-      id: `heartbeat-${Date.now()}`,
+      id: editingHeartbeatId || `heartbeat-${Date.now()}`,
       date: heartbeatDate.value,
       year: heartbeatDate.value.slice(0, 4),
       title: heartbeatTitle.value.trim(),
       text: heartbeatStory.value.trim(),
       image: storedPhoto.image,
-      storagePath: storedPhoto.storagePath,
+      storagePath: storedPhoto.storagePath || pendingHeartbeatStoragePath,
       alt: heartbeatTitle.value.trim(),
-      place: "岳岳 × 昆昆",
-      quote: "这一刻，想和你记很久很久。",
+      place: editingHeartbeatId
+        ? heartbeats.find((item) => item.id === editingHeartbeatId)?.place ||
+          "岳岳 × 昆昆"
+        : "岳岳 × 昆昆",
+      quote: editingHeartbeatId
+        ? heartbeats.find((item) => item.id === editingHeartbeatId)?.quote ||
+          "这一刻，想和你记很久很久。"
+        : "这一刻，想和你记很久很久。",
+      updatedAt: new Date().toISOString(),
     };
-    const nextHeartbeats = [nextHeartbeat, ...heartbeats].sort((a, b) =>
-      String(b.date).localeCompare(String(a.date)),
-    );
+    const nextHeartbeats = (
+      editingHeartbeatId
+        ? heartbeats.map((item) =>
+            item.id === editingHeartbeatId ? nextHeartbeat : item,
+          )
+        : [nextHeartbeat, ...heartbeats]
+    ).sort((a, b) => String(b.date).localeCompare(String(a.date)));
     try {
       localStorage.setItem(heartbeatStorageKey, JSON.stringify(nextHeartbeats));
     } catch {
@@ -817,18 +1173,120 @@
       return;
     }
     heartbeats = nextHeartbeats;
-    heartbeatForm.reset();
-    pendingHeartbeatPhoto = "";
-    heartbeatPhotoPreview.removeAttribute("src");
-    heartbeatPhotoPreview.hidden = true;
-    heartbeatPhotoPicker.hidden = false;
+    const wasEditing = Boolean(editingHeartbeatId);
+    resetHeartbeatForm();
     renderHeartbeats();
-    showToast("这一次心动已经记下来了");
+    renderRecentMemories();
+    showToast(wasEditing ? "这个心动瞬间已经修改好了" : "这一次心动已经记下来了");
   });
 
+  cancelHeartbeatEdit.addEventListener("click", resetHeartbeatForm);
   renderHeartbeats();
+  [mealDate, photoDate, argumentDate, heartbeatDate].forEach(
+    registerDefaultDate,
+  );
+  window.setInterval(refreshDefaultDates, 60 * 1000);
+
+  /* Recent memories and local backup */
+
+  function escapeRecentText(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function renderRecentMemories() {
+    const target = $("#recentMemoryList");
+    if (!target) return;
+    const entries = [
+      ...foods.map((item) => ({
+        type: "一起吃过的",
+        emoji: "🍰",
+        href: "#foods",
+        date: item.date,
+        title: item.name,
+        text: ratingLabels[item.rating] || "一起吃的一顿",
+        image: item.image,
+      })),
+      ...photos.map((item) => ({
+        type: "照片",
+        emoji: "📷",
+        href: "#moments",
+        date: item.date,
+        title: item.title,
+        text: item.text,
+        image: item.image,
+      })),
+      ...heartbeats.map((item) => ({
+        type: "心动瞬间",
+        emoji: "💗",
+        href: "#heartbeats",
+        date: item.date,
+        title: item.title,
+        text: item.text,
+        image: item.image,
+      })),
+    ];
+    entries.sort((a, b) => {
+      const aDate = /^\d{4}-\d{2}-\d{2}$/.test(a.date || "")
+        ? a.date
+        : "";
+      const bDate = /^\d{4}-\d{2}-\d{2}$/.test(b.date || "")
+        ? b.date
+        : "";
+      return bDate.localeCompare(aDate);
+    });
+    const recent = entries.slice(0, 4);
+    target.innerHTML =
+      recent.length === 0
+        ? '<p class="recent-empty">这里还很空，等我们继续写一点点。</p>'
+        : recent
+            .map(
+              (item) => `
+                <a class="recent-memory-card" href="${item.href}">
+                  <span class="recent-memory-card__visual">
+                    ${item.image ? `<img src="${escapeRecentText(item.image)}" alt="" loading="lazy" />` : ""}
+                    <span class="recent-memory-card__type">${item.type}</span>
+                    <span class="recent-memory-card__emoji">${item.emoji}</span>
+                  </span>
+                  <span class="recent-memory-card__body">
+                    <time>${escapeRecentText(formatMemoryDate(item.date))}</time>
+                    <strong>${escapeRecentText(item.title)}</strong>
+                    <p>${escapeRecentText(item.text)}</p>
+                  </span>
+                </a>
+              `,
+            )
+            .join("");
+    observeReveals(target);
+  }
+
+  $("#exportRecords")?.addEventListener("click", () => {
+    const exportPayload = {
+      exportedAt: new Date().toISOString(),
+      couple: data.couple,
+      foods,
+      hundredThings,
+      photos,
+      arguments: argumentRecords,
+      heartbeats,
+    };
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+      type: "application/json",
+    });
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = downloadUrl;
+    anchor.download = `岳岳和昆昆的回忆备份-${currentChinaDate()}.json`;
+    anchor.click();
+    URL.revokeObjectURL(downloadUrl);
+    showToast("全部记录已经备份到电脑");
+  });
 
   renderHundredList();
+  renderRecentMemories();
   observeReveals();
 
   /* Intro */
@@ -898,6 +1356,8 @@
         });
       }
     });
+
+    if (activeName === "home") renderRecentMemories();
 
     homeLink.hidden = activeName === "home";
     pageLabel.textContent = pageLabels[activeName];

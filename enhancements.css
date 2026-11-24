@@ -1,0 +1,312 @@
+.preview-banner {
+  position: fixed;
+  z-index: 300;
+  top: 12px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100vw - 28px);
+  padding: 8px 14px;
+  border: 1px solid rgba(194, 96, 119, 0.2);
+  border-radius: 999px;
+  color: #8b616a;
+  background: rgba(255, 249, 246, 0.94);
+  box-shadow: 0 9px 26px rgba(129, 73, 84, 0.12);
+  font-size: 10px;
+  backdrop-filter: blur(12px);
+  transform: translateX(-50%);
+}
+
+.preview-banner strong {
+  color: #d56f87;
+}
+
+.recent-section {
+  grid-column: 1 / -1;
+  margin-top: clamp(28px, 4vw, 58px);
+  padding: clamp(25px, 3.5vw, 42px);
+  border: 1.5px solid rgba(226, 145, 160, 0.24);
+  border-radius: 30px;
+  background:
+    linear-gradient(rgba(255, 252, 248, 0.9), rgba(255, 248, 246, 0.94)),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 31px,
+      rgba(225, 157, 169, 0.08) 31px 32px
+    );
+  box-shadow: 0 18px 50px rgba(152, 91, 104, 0.07);
+}
+
+.recent-section__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+
+.recent-section__heading h2 {
+  margin: 7px 0 8px;
+  color: #674b50;
+  font-size: clamp(26px, 3.5vw, 41px);
+  font-weight: 500;
+}
+
+.recent-section__heading > div > p:last-child {
+  margin: 0;
+  color: #a07f86;
+  font-size: 12px;
+}
+
+.backup-button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(219, 124, 145, 0.28);
+  border-radius: 999px;
+  color: #a95f72;
+  background: #fff9f6;
+  box-shadow: 0 8px 18px rgba(161, 91, 107, 0.08);
+  cursor: pointer;
+}
+
+.backup-button span {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 16px;
+}
+
+.recent-memory-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.recent-memory-card {
+  display: grid;
+  grid-template-rows: 118px auto;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(226, 154, 166, 0.22);
+  border-radius: 20px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 8px 22px rgba(146, 89, 103, 0.06);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.recent-memory-card:hover {
+  box-shadow: 0 15px 30px rgba(146, 89, 103, 0.11);
+  transform: translateY(-4px) rotate(-0.5deg);
+}
+
+.recent-memory-card__visual {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, #fff, transparent 25%),
+    linear-gradient(145deg, #ffe4ea, #e4f3ed);
+}
+
+.recent-memory-card__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recent-memory-card__type {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #76545b;
+  background: rgba(255, 251, 248, 0.9);
+  box-shadow: 0 4px 10px rgba(111, 67, 77, 0.08);
+  font-size: 8px;
+}
+
+.recent-memory-card__emoji {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(255, 252, 249, 0.86);
+  font-size: 20px;
+}
+
+.recent-memory-card__body {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 14px 15px 16px;
+}
+
+.recent-memory-card__body time {
+  color: #bd8a96;
+  font-size: 9px;
+}
+
+.recent-memory-card__body strong {
+  overflow: hidden;
+  color: #71545a;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-memory-card__body p {
+  display: -webkit-box;
+  min-height: 34px;
+  margin: 0;
+  overflow: hidden;
+  color: #9e7e84;
+  font-size: 10px;
+  line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.recent-empty {
+  grid-column: 1 / -1;
+  padding: 32px;
+  border: 1px dashed rgba(223, 143, 159, 0.28);
+  border-radius: 18px;
+  color: #aa878e;
+  text-align: center;
+  font-size: 12px;
+}
+
+.record-manage {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.record-manage button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(214, 133, 150, 0.23);
+  border-radius: 999px;
+  color: #b16d7e;
+  background: rgba(255, 250, 248, 0.72);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.record-manage button:hover {
+  background: #ffe7ec;
+}
+
+.form-cancel {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(217, 137, 154, 0.24);
+  border-radius: 999px;
+  color: #a87882;
+  background: rgba(255, 251, 248, 0.72);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.hundred-item__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.hundred-item__edit {
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 999px;
+  color: #a77782;
+  background: transparent;
+  cursor: pointer;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+}
+
+.hundred-item__edit:hover {
+  color: #a55f70;
+  background: rgba(232, 139, 158, 0.1);
+}
+
+@media (max-width: 520px) {
+  .form-cancel {
+    min-height: 38px;
+  }
+}
+
+.gallery-item__actions {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 12px 11px;
+}
+
+.gallery-item__actions button,
+.timeline-item__actions button {
+  min-width: 38px;
+  min-height: 28px;
+  border: 1px solid rgba(213, 131, 149, 0.23);
+  border-radius: 999px;
+  color: #aa6979;
+  background: rgba(255, 251, 248, 0.85);
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.timeline-item__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 24px 18px;
+}
+
+.preview-error {
+  margin: 30px;
+  padding: 20px;
+  border-radius: 18px;
+  color: #8e3449;
+  background: #fff2f4;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .recent-memory-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .preview-banner {
+    position: fixed;
+    top: 8px;
+    width: max-content;
+    font-size: 8px;
+  }
+
+  .recent-section__heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .recent-memory-list {
+    grid-template-columns: 1fr;
+  }
+
+  .recent-memory-card {
+    grid-template-columns: 112px 1fr;
+    grid-template-rows: auto;
+  }
+}

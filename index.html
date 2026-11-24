@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="styles.css?v=cloud-2" />
     <link rel="stylesheet" href="theme-final.css?v=final-cute" />
     <link rel="stylesheet" href="cloud-auth.css?v=cloud-2" />
+    <link rel="stylesheet" href="enhancements.css?v=cloud-6" />
   </head>
   <body>
     <div
@@ -219,6 +220,21 @@
                 <span class="hub-card__arrow" aria-hidden="true">↗</span>
               </a>
             </nav>
+
+            <section class="recent-section reveal" aria-labelledby="recentTitle">
+              <div class="recent-section__heading">
+                <div>
+                  <p class="eyebrow">RECENTLY KEPT</p>
+                  <h2 id="recentTitle">最近写下的我们</h2>
+                  <p>不同小本子里的新鲜回忆，都从这里冒出来。</p>
+                </div>
+                <button class="backup-button" id="exportRecords" type="button">
+                  <span aria-hidden="true">↓</span>
+                  备份全部记录
+                </button>
+              </div>
+              <div class="recent-memory-list" id="recentMemoryList"></div>
+            </section>
           </div>
 
           <footer class="hub__footer section-shell">
@@ -340,6 +356,14 @@
 
               <div class="meal-form__footer">
                 <p>提交后会安全同步到我们的共同云端。</p>
+                <button
+                  class="form-cancel"
+                  id="cancelFoodEdit"
+                  type="button"
+                  hidden
+                >
+                  取消修改
+                </button>
                 <button type="submit">
                   <span>记下这一顿</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -404,6 +428,14 @@
               </div>
               <div class="meal-form__footer">
                 <p>以后完成时，直接在前面打勾就好。</p>
+                <button
+                  class="form-cancel"
+                  id="cancelHundredEdit"
+                  type="button"
+                  hidden
+                >
+                  取消修改
+                </button>
                 <button type="submit">
                   <span>放进我们的清单</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -535,6 +567,14 @@
               </div>
               <div class="meal-form__footer">
                 <p>照片会收进只有我们登录后才能看的私密相册。</p>
+                <button
+                  class="form-cancel"
+                  id="cancelPhotoEdit"
+                  type="button"
+                  hidden
+                >
+                  取消修改
+                </button>
                 <button type="submit">
                   <span>收进照片册</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -660,6 +700,14 @@
               </div>
               <div class="meal-form__footer">
                 <p>写下来，是为了更好地靠近。</p>
+                <button
+                  class="form-cancel"
+                  id="cancelArgumentEdit"
+                  type="button"
+                  hidden
+                >
+                  取消修改
+                </button>
                 <button type="submit">
                   <span>完成这次复盘</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -778,6 +826,14 @@
               </div>
               <div class="meal-form__footer">
                 <p>每一个心里软一下的瞬间，都值得被记住。</p>
+                <button
+                  class="form-cancel"
+                  id="cancelHeartbeatEdit"
+                  type="button"
+                  hidden
+                >
+                  取消修改
+                </button>
                 <button type="submit">
                   <span>收下这次心动</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -828,7 +884,7 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="supabase-config.js?v=cloud-2"></script>
-    <script src="site-bootstrap.js?v=cloud-3"></script>
+    <script src="supabase-config.js?v=cloud-6"></script>
+    <script src="site-bootstrap.js?v=cloud-7"></script>
   </body>
 </html>

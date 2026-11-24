@@ -7,6 +7,15 @@
     "between-us-photo-records-v1",
     "between-us-argument-records-v1",
     "between-us-heartbeat-records-v1",
+    "between-us-deleted-records-v1",
+  ]);
+  const deletionStorageKey = "between-us-deleted-records-v1";
+  const mergeableCollections = new Set([
+    "between-us-food-records-v1",
+    "between-us-100-items-v2",
+    "between-us-photo-records-v1",
+    "between-us-argument-records-v1",
+    "between-us-heartbeat-records-v1",
   ]);
   const originalSetItem = Storage.prototype.setItem;
   const pendingSaves = new Map();
@@ -43,6 +52,65 @@
       return [];
     }
   };
+
+  function readDeletionMap() {
+    try {
+      const parsed = JSON.parse(
+        localStorage.getItem(deletionStorageKey) || "{}",
+      );
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function recordTimestamp(record) {
+    const timestamp = Date.parse(record?.updatedAt || "");
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  function mergeRecordArrays(localRecords, remoteRecords, localDeletes, remoteDeletes) {
+    const records = new Map();
+    [...remoteRecords, ...localRecords].forEach((record) => {
+      if (!record?.id) return;
+      const current = records.get(record.id);
+      if (!current || recordTimestamp(record) >= recordTimestamp(current)) {
+        records.set(record.id, record);
+      }
+    });
+    const deletes = { ...remoteDeletes, ...localDeletes };
+    return [...records.values()].filter((record) => {
+      const deletedAt = Date.parse(deletes[record.id] || "");
+      return !Number.isFinite(deletedAt) || deletedAt < recordTimestamp(record);
+    });
+  }
+
+  function mergeDeletionMaps(localDeletes, remoteDeletes) {
+    const merged = {};
+    const collectionKeys = new Set([
+      ...Object.keys(localDeletes || {}),
+      ...Object.keys(remoteDeletes || {}),
+    ]);
+    collectionKeys.forEach((key) => {
+      const ids = new Set([
+        ...Object.keys(localDeletes?.[key] || {}),
+        ...Object.keys(remoteDeletes?.[key] || {}),
+      ]);
+      merged[key] = {};
+      ids.forEach((id) => {
+        const localTime = Date.parse(localDeletes?.[key]?.[id] || "");
+        const remoteTime = Date.parse(remoteDeletes?.[key]?.[id] || "");
+        const timestamp = Math.max(
+          Number.isFinite(localTime) ? localTime : 0,
+          Number.isFinite(remoteTime) ? remoteTime : 0,
+        );
+        if (timestamp > 0) {
+          merged[key][id] = new Date(timestamp).toISOString();
+        }
+      });
+    });
+    return merged;
+  }
 
   function loadScript(source) {
     return new Promise((resolve, reject) => {
@@ -283,13 +351,122 @@
     return { image, storagePath };
   }
 
+  async function readCloudState(keys) {
+    const remoteResult = await client
+      .from("shared_state")
+      .select("key,value")
+      .in("key", keys);
+    if (remoteResult.error) throw remoteResult.error;
+    const rows = Array.isArray(remoteResult.data) ? remoteResult.data : [];
+    return Object.fromEntries(
+      rows.map((row) => [row.key, normalizeValue(row.value)]),
+    );
+  }
+
+  function localContributionExists(key, originalValue, remoteRows) {
+    if (key === deletionStorageKey) {
+      const remoteDeletes = remoteRows[deletionStorageKey] || {};
+      return Object.entries(originalValue || {}).every(
+        ([collectionKey, records]) =>
+          Object.entries(records || {}).every(([recordId, deletedAt]) => {
+            const remoteTime = Date.parse(
+              remoteDeletes?.[collectionKey]?.[recordId] || "",
+            );
+            const localTime = Date.parse(deletedAt || "");
+            return (
+              Number.isFinite(remoteTime) &&
+              (!Number.isFinite(localTime) || remoteTime >= localTime)
+            );
+          }),
+      );
+    }
+    if (!mergeableCollections.has(key)) return true;
+    const remoteRecords = Array.isArray(remoteRows[key])
+      ? remoteRows[key]
+      : [];
+    const remoteById = new Map(
+      remoteRecords.map((record) => [record.id, record]),
+    );
+    const deletes = remoteRows[deletionStorageKey]?.[key] || {};
+    return (Array.isArray(originalValue) ? originalValue : []).every(
+      (record) => {
+        const remoteRecord = remoteById.get(record.id);
+        const remoteTime = recordTimestamp(remoteRecord);
+        const localTime = recordTimestamp(record);
+        const deletedTime = Date.parse(deletes[record.id] || "");
+        return (
+          (remoteRecord && remoteTime >= localTime) ||
+          (Number.isFinite(deletedTime) && deletedTime > localTime)
+        );
+      },
+    );
+  }
+
   async function saveKeyNow(key, value) {
-    const result = await client.rpc("save_shared_state", {
-      p_key: key,
-      p_value: normalizeValue(value),
-    });
-    if (result.error) throw result.error;
-    cloudVersion = Math.max(cloudVersion, Number(result.data) || 0);
+    const originalValue = normalizeValue(value);
+    let nextValue = originalValue;
+    const shouldMerge =
+      mergeableCollections.has(key) || key === deletionStorageKey;
+
+    for (let attempt = 0; attempt < (shouldMerge ? 3 : 1); attempt += 1) {
+      if (shouldMerge) {
+        const rows = await readCloudState([key, deletionStorageKey]);
+        const localDeletes = readDeletionMap();
+        if (mergeableCollections.has(key)) {
+          const mergedRecords = mergeRecordArrays(
+            Array.isArray(originalValue) ? originalValue : [],
+            Array.isArray(rows[key]) ? rows[key] : [],
+            localDeletes[key] || {},
+            rows[deletionStorageKey]?.[key] || {},
+          );
+          const localIds = new Set(
+            (Array.isArray(originalValue) ? originalValue : []).map(
+              (record) => record?.id,
+            ),
+          );
+          if (mergedRecords.some((record) => !localIds.has(record.id))) {
+            showRefreshNotice();
+          }
+          nextValue = mergedRecords;
+          originalSetItem.call(localStorage, key, JSON.stringify(nextValue));
+        } else {
+          nextValue = mergeDeletionMaps(
+            originalValue,
+            rows[deletionStorageKey],
+          );
+          originalSetItem.call(
+            localStorage,
+            deletionStorageKey,
+            JSON.stringify(nextValue),
+          );
+        }
+      }
+
+      const result = await client.rpc("save_shared_state", {
+        p_key: key,
+        p_value: nextValue,
+      });
+      if (result.error) throw result.error;
+      cloudVersion = Math.max(cloudVersion, Number(result.data) || 0);
+      if (!shouldMerge) return;
+
+      await new Promise((resolve) => setTimeout(resolve, 240));
+      const verifiedRows = await readCloudState([key, deletionStorageKey]);
+      if (localContributionExists(key, originalValue, verifiedRows)) return;
+    }
+  }
+
+  function markDeleted(collectionKey, recordId) {
+    if (!mergeableCollections.has(collectionKey) || !recordId) return;
+    const deletions = readDeletionMap();
+    deletions[collectionKey] ||= {};
+    deletions[collectionKey][String(recordId)] = new Date().toISOString();
+    originalSetItem.call(
+      localStorage,
+      deletionStorageKey,
+      JSON.stringify(deletions),
+    );
+    queueCloudSave(deletionStorageKey, JSON.stringify(deletions));
   }
 
   async function flushPendingSaves() {
@@ -452,11 +629,12 @@
       uploadImage,
       signStoragePath,
       refreshSignedImages,
+      markDeleted,
     };
 
     if (!scriptsStarted) {
       scriptsStarted = true;
-      await loadScript("app.js?v=cloud-3");
+      await loadScript("app.js?v=cloud-7");
     }
     hideLogin();
     setStatus("云端已同步 · 两边都能看见", "online");
@@ -475,8 +653,9 @@
           image: dataUrl,
           storagePath: "",
         }),
+        markDeleted: () => {},
       };
-      await loadScript("app.js?v=cloud-3");
+      await loadScript("app.js?v=cloud-7");
     }
     document.body.classList.add("app-ready");
   }
