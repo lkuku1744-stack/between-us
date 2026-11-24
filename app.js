@@ -620,7 +620,6 @@
   const argumentDate = $("#argumentDate");
   const argumentTitle = $("#argumentTitle");
   const argumentTrigger = $("#argumentTrigger");
-  const argumentResolution = $("#argumentResolution");
   const argumentLesson = $("#argumentLesson");
   const savedArguments = loadArray(argumentStorageKey);
   let argumentRecords = (
@@ -652,7 +651,6 @@
         </summary>
         <div class="argument-item__body">
           <div><span>那次因为什么</span><p>${item.trigger}</p></div>
-          <div><span>后来怎么和好</span><p>${item.resolution}</p></div>
           <div class="argument-item__lesson"><span>我们学到了</span><p>${item.learned}</p></div>
         </div>
       `;
@@ -667,10 +665,9 @@
     if (
       !argumentDate.value ||
       !argumentTitle.value.trim() ||
-      !argumentTrigger.value.trim() ||
-      !argumentResolution.value.trim()
+      !argumentTrigger.value.trim()
     ) {
-      showToast("把日期、争执和怎样和好都写下来吧");
+      showToast("把日期、争执和当时发生了什么写下来吧");
       return;
     }
     const nextArgument = {
@@ -679,7 +676,7 @@
       title: argumentTitle.value.trim(),
       place: "我们的复盘",
       trigger: argumentTrigger.value.trim(),
-      resolution: argumentResolution.value.trim(),
+      resolution: "",
       learned: argumentLesson.value.trim() || "下次更早一点听懂彼此。",
       duration: "已经和好",
     };

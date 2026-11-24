@@ -456,7 +456,7 @@
 
     if (!scriptsStarted) {
       scriptsStarted = true;
-      await loadScript("app.js?v=cloud-2");
+      await loadScript("app.js?v=cloud-3");
     }
     hideLogin();
     setStatus("云端已同步 · 两边都能看见", "online");
@@ -476,7 +476,7 @@
           storagePath: "",
         }),
       };
-      await loadScript("app.js?v=cloud-2");
+      await loadScript("app.js?v=cloud-3");
     }
     document.body.classList.add("app-ready");
   }
