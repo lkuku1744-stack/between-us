@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title">
+  <title id="title">暖灯下的小餐桌</title>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#817567"/>
+      <stop offset=".55" stop-color="#5b574f"/>
+      <stop offset="1" stop-color="#2d3f39"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx=".5" cy=".4" r=".5">
+      <stop stop-color="#fdf0c7" stop-opacity=".85"/>
+      <stop offset=".42" stop-color="#e5bb7f" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#e5bb7f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="table" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#5b4332"/>
+      <stop offset="1" stop-color="#2b2c27"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" seed="8"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .14"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="1200" height="820" fill="url(#wall)"/>
+  <rect x="85" y="74" width="445" height="383" rx="3" fill="#1d3533"/>
+  <rect x="100" y="89" width="415" height="353" fill="#4a6662" opacity=".72"/>
+  <path d="M100 352c90-42 166-49 236-8 77 45 144 44 179-1v99H100Z" fill="#263d37" opacity=".72"/>
+  <circle cx="398" cy="179" r="42" fill="#f0d6a4" opacity=".68"/>
+  <path d="M100 222c70 11 139 6 203-15M101 253c83 5 150-6 199-31" fill="none" stroke="#e8d3ae" stroke-width="2" opacity=".23"/>
+  <path d="M558 0v197" stroke="#2b2e28" stroke-width="8"/>
+  <path d="M512 192h91l37 79H475Z" fill="#202d27"/>
+  <ellipse cx="558" cy="353" rx="290" ry="216" fill="url(#lamp)"/>
+  <path d="M0 588c266-89 610-93 1200-2v234H0Z" fill="url(#table)"/>
+  <ellipse cx="589" cy="599" rx="294" ry="54" fill="#ddc79e" opacity=".2"/>
+  <rect x="496" y="580" width="165" height="37" rx="18" fill="#e9dcc0"/>
+  <path d="M531 577c-18-58-3-104 43-135 50 29 62 76 38 137Z" fill="#9f6f4f"/>
+  <path d="M577 446c-5 41-4 84 3 129" fill="none" stroke="#664334" stroke-width="3" opacity=".7"/>
+  <path d="M358 563h111l-15 62H372Z" fill="#c7b089"/>
+  <ellipse cx="414" cy="562" rx="56" ry="12" fill="#eee0c4"/>
+  <path d="M748 552h115l-11 81H758Z" fill="#ad9f87"/>
+  <ellipse cx="805" cy="553" rx="58" ry="12" fill="#efe3cc"/>
+  <path d="M901 502c-5-52 5-85 30-111 12 42 12 80 3 115Z" fill="#405449"/>
+  <path d="M921 516c-33-32-48-65-43-99 35 21 57 48 67 82Z" fill="#54675a"/>
+  <path d="M922 516c26-27 43-57 48-89-29 9-49 34-61 74Z" fill="#344a40"/>
+  <rect x="890" y="503" width="58" height="73" rx="4" fill="#7f6855"/>
+  <rect width="1200" height="820" filter="url(#grain)" opacity=".5"/>
+</svg>

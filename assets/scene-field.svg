@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title">
+  <title id="title">风中的野花</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#b9c1ad"/>
+      <stop offset=".63" stop-color="#e5d8b8"/>
+      <stop offset="1" stop-color="#ccb280"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7b8469"/>
+      <stop offset=".6" stop-color="#4e6751"/>
+      <stop offset="1" stop-color="#263f35"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="4" seed="6"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .15"/></feComponentTransfer>
+    </filter>
+    <filter id="blur"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+  <rect width="900" height="1200" fill="url(#sky)"/>
+  <circle cx="710" cy="275" r="67" fill="#fff1c8" opacity=".58" filter="url(#blur)"/>
+  <circle cx="710" cy="275" r="31" fill="#fff1c8" opacity=".7"/>
+  <path d="M0 692c130-62 242-63 350-11 118 57 230 43 347-15 69-35 137-32 203 9v525H0Z" fill="url(#field)"/>
+  <path d="M0 790c139-38 252-29 347 24 116 65 221 56 312-9 91-65 171-65 241-12v407H0Z" fill="#3d5846" opacity=".7"/>
+  <g fill="none" stroke="#b5aa78" stroke-width="2.2" opacity=".7">
+    <path d="M165 1010c2-68 14-130 35-186M230 1052c-5-73 8-136 37-190M319 1092c-8-89 8-167 47-234M610 975c-4-79 10-148 40-208M715 1070c-16-102 2-187 55-255"/>
+  </g>
+  <g fill="#c9b67c" opacity=".85">
+    <circle cx="200" cy="817" r="5"/><circle cx="267" cy="849" r="4"/><circle cx="366" cy="847" r="5"/>
+    <circle cx="650" cy="756" r="5"/><circle cx="770" cy="805" r="4"/>
+  </g>
+  <g fill="none" stroke="#7d8e69" stroke-width="3" opacity=".8">
+    <path d="M440 1090c-9-85 2-164 32-237M482 1118c-15-109 0-201 44-276"/>
+    <path d="M463 946c-36-18-61-43-76-76 37 7 63 27 80 60M505 877c28-26 48-53 60-82-32 9-55 32-70 70"/>
+  </g>
+  <g fill="#cf836e" opacity=".55">
+    <circle cx="132" cy="900" r="4"/><circle cx="520" cy="823" r="5"/><circle cx="781" cy="915" r="4"/>
+  </g>
+  <path d="M0 1127c160-47 322-33 485 41 124 56 255 60 415 12v20H0Z" fill="#1b342b" opacity=".8"/>
+  <rect width="900" height="1200" filter="url(#grain)" opacity=".5"/>
+</svg>

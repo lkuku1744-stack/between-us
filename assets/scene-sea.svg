@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title">
+  <title id="title">海边黄昏</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#8aa3a7"/>
+      <stop offset=".55" stop-color="#dac8b5"/>
+      <stop offset="1" stop-color="#d89a70"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6f8e91"/>
+      <stop offset=".48" stop-color="#456e71"/>
+      <stop offset="1" stop-color="#183d3e"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#d6b489"/>
+      <stop offset="1" stop-color="#8b745b"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".76" numOctaves="3" seed="5"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .13"/></feComponentTransfer>
+    </filter>
+    <filter id="blur"><feGaussianBlur stdDeviation="20"/></filter>
+  </defs>
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <circle cx="833" cy="343" r="112" fill="#f7dfb7" opacity=".38" filter="url(#blur)"/>
+  <circle cx="833" cy="343" r="43" fill="#f9e7c3"/>
+  <path d="M0 477c187-19 303-9 452 12 171 25 269-6 390-16 128-10 231 4 358 31v63H0Z" fill="#526f72" opacity=".47"/>
+  <rect y="490" width="1200" height="251" fill="url(#sea)"/>
+  <path d="M0 552c182-12 314 4 464 15 148 10 272-14 406-24 127-9 222-1 330 18M0 615c188-15 341 9 495 22 127 11 244-8 358-21 125-13 231-3 347 19M0 691c151-20 309-8 446 15 157 26 286 9 415-10 116-16 221-6 339 17" fill="none" stroke="#d7e0cf" stroke-width="2.5" opacity=".3"/>
+  <path d="M677 526c47-19 93-21 140-5-23 11-65 19-109 24 50 5 87 2 121-9" fill="none" stroke="#f0d5a3" stroke-width="3" opacity=".32"/>
+  <path d="M0 741c166-38 305-53 451-34 169 22 275 61 428 55 125-5 205-15 321-28v166H0Z" fill="url(#sand)"/>
+  <path d="M0 801c143-38 270-34 389 5 77 25 140 27 213 4 84-27 159-31 242-6 117 34 225 26 356-10v106H0Z" fill="#7d705c" opacity=".43"/>
+  <path d="M77 813c70-21 141-21 211-1M901 819c66-19 126-13 187 11M377 862c72-18 136-5 196 29" fill="none" stroke="#eed5aa" stroke-width="2" opacity=".34"/>
+  <rect width="1200" height="900" filter="url(#grain)" opacity=".55"/>
+</svg>

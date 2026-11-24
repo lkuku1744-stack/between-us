@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title">
+  <title id="title">窗边的早餐与晨光</title>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#b9b6a6"/>
+      <stop offset=".52" stop-color="#d5c8ad"/>
+      <stop offset="1" stop-color="#8d9183"/>
+    </linearGradient>
+    <radialGradient id="light" cx=".7" cy=".15" r=".8">
+      <stop stop-color="#fff6d7" stop-opacity=".8"/>
+      <stop offset=".6" stop-color="#f2d9a2" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#f2d9a2" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="table" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#aa8b68"/>
+      <stop offset="1" stop-color="#5b4e3e"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".78" numOctaves="3" seed="17"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .12"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="900" height="1200" fill="url(#wall)"/>
+  <rect x="88" y="86" width="426" height="450" fill="#435b56"/>
+  <rect x="105" y="103" width="392" height="416" fill="#9cae9d"/>
+  <circle cx="375" cy="218" r="105" fill="#f7e8be" opacity=".6"/>
+  <circle cx="375" cy="218" r="44" fill="#fbf1d4" opacity=".8"/>
+  <path d="M105 389c86-41 169-45 242-10 74 35 128 33 150-3v143H105Z" fill="#708b75" opacity=".7"/>
+  <path d="M300 86v450M88 311h426" stroke="#39504a" stroke-width="9" opacity=".6"/>
+  <rect width="900" height="1200" fill="url(#light)"/>
+  <path d="M0 756c315-64 599-55 900 11v433H0Z" fill="url(#table)"/>
+  <ellipse cx="587" cy="786" rx="261" ry="62" fill="#f3e7c9" opacity=".21"/>
+  <ellipse cx="504" cy="779" rx="159" ry="45" fill="#e9d7b1"/>
+  <ellipse cx="504" cy="772" rx="117" ry="30" fill="#f7edda"/>
+  <path d="M432 742c23-38 56-57 98-58 30 35 36 71 18 104-48 13-87-2-116-46Z" fill="#ad7255"/>
+  <path d="M490 697c-6 32-6 62 1 91" fill="none" stroke="#7d4937" stroke-width="2" opacity=".5"/>
+  <path d="M668 707h76v120h-76Z" fill="#e8ddc8"/>
+  <ellipse cx="706" cy="707" rx="38" ry="10" fill="#f4ead9"/>
+  <path d="M706 707c-12-45-10-74 6-101 28 27 36 60 22 96Z" fill="#f5f1e6" opacity=".5"/>
+  <path d="M310 792c38-23 83-22 134 1v98c-48-14-92-15-134-1Z" fill="#e6dcc8"/>
+  <path d="M316 811c35 1 67 7 97 19M316 836c32 1 63 7 92 19" fill="none" stroke="#b8a98f" stroke-width="2" opacity=".6"/>
+  <path d="M180 757c-7-55 8-99 44-132 9 48 7 89-6 124Z" fill="#576d58"/>
+  <path d="M204 764c-34-26-55-53-61-81 33 12 58 35 76 70Z" fill="#6f8068"/>
+  <path d="M207 764c22-29 39-57 50-84-25 6-44 29-57 68Z" fill="#435c4b"/>
+  <rect x="174" y="750" width="59" height="97" rx="3" fill="#8c7864"/>
+  <rect width="900" height="1200" filter="url(#grain)" opacity=".48"/>
+</svg>

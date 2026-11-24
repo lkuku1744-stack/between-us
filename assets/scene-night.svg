@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title">
+  <title id="title">雨夜与远处的城市灯光</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#102b2d"/>
+      <stop offset=".55" stop-color="#22443f"/>
+      <stop offset="1" stop-color="#665f4d"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1c3332"/>
+      <stop offset=".55" stop-color="#293934"/>
+      <stop offset="1" stop-color="#5e4f3d"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="4" seed="21"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .17"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="900" height="1200" fill="url(#sky)"/>
+  <circle cx="165" cy="210" r="96" fill="#e3d8a8" opacity=".07" filter="url(#glow)"/>
+  <circle cx="165" cy="210" r="35" fill="#e9ddbb" opacity=".5"/>
+  <g fill="#d9c98e" opacity=".5">
+    <circle cx="371" cy="150" r="1.7"/><circle cx="518" cy="223" r="1.2"/><circle cx="699" cy="130" r="1.8"/>
+    <circle cx="803" cy="276" r="1.1"/><circle cx="298" cy="322" r="1.2"/><circle cx="606" cy="355" r="1.4"/>
+  </g>
+  <path d="M0 714c137-78 259-90 369-35 120 60 240 54 334-19 64-50 130-51 197-4v544H0Z" fill="#162e2d"/>
+  <path d="M62 758h126v179H62ZM209 704h98v211h-98ZM735 679h92v236h-92ZM647 753h61v162h-61Z" fill="#102827"/>
+  <g fill="#d8b678" opacity=".55">
+    <rect x="81" y="780" width="13" height="8"/><rect x="118" y="800" width="13" height="8"/>
+    <rect x="233" y="739" width="12" height="8"/><rect x="266" y="777" width="12" height="8"/>
+    <rect x="757" y="708" width="12" height="8"/><rect x="790" y="746" width="12" height="8"/>
+  </g>
+  <path d="M0 842c134-46 251-52 357-14 115 41 217 40 313 1 90-36 166-39 230-10v381H0Z" fill="url(#road)"/>
+  <path d="M442 1200c21-148 34-243 75-326-44 79-37 203-3 326Zm17 0c-3-87 6-153 43-210" fill="none" stroke="#c6a772" stroke-width="3" opacity=".22"/>
+  <path d="M-25 1004c178 56 347 34 509-66 159-98 304-118 441-59" fill="none" stroke="#dac58f" stroke-width="1.4" opacity=".23"/>
+  <path d="M-25 1048c152 37 305 26 459-31 156-58 315-72 491-40" fill="none" stroke="#dac58f" stroke-width="6" opacity=".08" filter="url(#glow)"/>
+  <g stroke="#b6c8bb" stroke-width="1.4" opacity=".23">
+    <path d="m101 284-36 154M228 156l-49 198M348 346l-32 137M704 210l-53 205M813 362l-31 153M515 92l-35 173"/>
+  </g>
+  <path d="M0 1087c160-15 291 7 414 58 95 39 173 44 242 18 78-30 156-29 244 2v35H0Z" fill="#0e2422"/>
+  <rect width="900" height="1200" filter="url(#grain)" opacity=".55"/>
+</svg>
