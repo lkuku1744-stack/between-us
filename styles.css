@@ -5581,6 +5581,7 @@ body::before {
   margin: 0;
   padding: 0 9px 0 0;
   overflow-y: auto;
+  overflow-anchor: none;
   list-style: none;
   scrollbar-width: thin;
   scrollbar-color: rgba(177, 140, 84, 0.5) transparent;
@@ -5600,6 +5601,7 @@ body::before {
 }
 
 .hundred-list label {
+  position: relative;
   display: grid;
   grid-template-columns: 17px 24px 1fr;
   align-items: center;
@@ -5614,7 +5616,13 @@ body::before {
 
 .hundred-list input {
   position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
   opacity: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .hundred-list input:checked + .wish-check {

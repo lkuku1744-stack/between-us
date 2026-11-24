@@ -334,14 +334,34 @@
           <button class="hundred-item__remove" type="button" aria-label="移除${thing.text}">移除</button>
         </div>
       `;
-      item.querySelector("input").addEventListener("change", (event) => {
+      const label = item.querySelector("label");
+      const checkbox = item.querySelector("input");
+      let viewportBeforeToggle = null;
+
+      label.addEventListener(
+        "pointerdown",
+        () => {
+          viewportBeforeToggle = captureHundredViewport();
+        },
+        { passive: true },
+      );
+      checkbox.addEventListener("keydown", () => {
+        viewportBeforeToggle = captureHundredViewport();
+      });
+      checkbox.addEventListener("change", (event) => {
+        const viewport = viewportBeforeToggle || captureHundredViewport();
         thing.done = event.target.checked;
         saveHundredThings();
         updateHundredProgress();
         showToast(thing.done ? "又完成了一件小事" : "已放回还没做的清单");
         if (activeHundredFilter !== "all") {
-          window.setTimeout(renderHundredList, reducedMotion ? 0 : 180);
+          renderHundredList();
         }
+        restoreHundredViewport(viewport);
+        window.requestAnimationFrame(() =>
+          restoreHundredViewport(viewport),
+        );
+        viewportBeforeToggle = null;
       });
       item
         .querySelector(".hundred-item__remove")
@@ -361,6 +381,25 @@
     });
 
     updateHundredProgress();
+  }
+
+  function captureHundredViewport() {
+    return {
+      pageY: window.scrollY,
+      listY: hundredList.scrollTop,
+    };
+  }
+
+  function restoreHundredViewport(viewport) {
+    if (!viewport) return;
+    const root = document.documentElement;
+    const previousBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, viewport.pageY);
+    hundredList.scrollTop = viewport.listY;
+    window.requestAnimationFrame(() => {
+      root.style.scrollBehavior = previousBehavior;
+    });
   }
 
   function saveHundredThings() {
@@ -822,7 +861,7 @@
   const pageLabels = {
     home: "五本共同记录",
     foods: "一起吃过的",
-    hundred: "100 件小事",
+    hundred: "一起做的一百件事",
     moments: "一起拍的照片",
     arguments: "一起吵过的架",
     heartbeats: "心动瞬间",
