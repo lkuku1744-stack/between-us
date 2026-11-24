@@ -22,6 +22,15 @@
   color: #d56f87;
 }
 
+#home .hub-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#home .hub-actions .hub-card {
+  grid-column: span 1;
+  min-height: 205px;
+}
+
 .recent-section {
   grid-column: 1 / -1;
   margin-top: clamp(28px, 4vw, 58px);
@@ -285,6 +294,12 @@
 @media (max-width: 900px) {
   .recent-memory-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  #home .hub-actions {
+    grid-template-columns: 1fr;
   }
 }
 
